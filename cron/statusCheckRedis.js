@@ -58,48 +58,51 @@ try {
 var accessToken = null;
 var pageCount = 0;
 var currentPage = 0;
+var retry = 0;
 
-module.exports = function(portal, callback) {
-	var config = 
-		{ child: { 
-			'transport': 'http', 
-			'ssl-protocol':'any', 
-			'ignore-ssl-errors':'yes'
-	  },
-	  casper: { 
-	  	logLevel: 'debug',
-      verbose: true,
-      viewportSize: { 
-      	width: 800, 
-      	height: 600
-      },
-      remoteScripts: [ ],
-      pageSettings: 
-      {
-        javascriptEnabled: true,
-        loadImages: false,
-        loadPlugins: true,
-        localToRemoteUrlAccessEnabled: false,
-        userAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/43.0.2357.130 Chrome/43.0.2357.130 Safari/537.36",
-        userName: null,
-        password: null,
-        XSSAuditingEnabled: false
-    	}
-	  }
+var config = 
+	{ child: { 
+		'transport': 'http', 
+		'ssl-protocol':'any', 
+		'ignore-ssl-errors':'yes'
+  },
+  casper: { 
+  	logLevel: 'debug',
+    verbose: true,
+    viewportSize: { 
+    	width: 800, 
+    	height: 600
+    },
+    remoteScripts: [ ],
+    pageSettings: 
+    {
+      javascriptEnabled: true,
+      loadImages: false,
+      loadPlugins: true,
+      localToRemoteUrlAccessEnabled: false,
+      userAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/43.0.2357.130 Chrome/43.0.2357.130 Safari/537.36",
+      userName: null,
+      password: null,
+      XSSAuditingEnabled: false
+  	}
+  }
+}
+
+var response = {
+	health: { 
+		jquery: false,
+		rootElementExists: false,
+		elementCount: 0,
+		nameElementExists: false,
+		linkElementExists: false,
+		rewardElementExists: false,
+		nameElementPopulated: false,
+		linkElementPopulated: false,
+		rewardElementPopulated: false
 	}
+};
 
-	var response = {
-		'health': { 
-			'jquery': false, 
-			'rootElement': false, 
-			'name': false, 
-			'link': false, 
-			'reward': false,
-			'pagination': 0,
-			'storeCount': 0
-		}
-	};
-
+var statusCheck = function(portal, callback) {
 /*
 	if (portal.loadJquery !== undefined && portal.loadJquery) {
 		config.casper.remoteScripts.push('https://code.jquery.com/jquery-2.1.3.min.js');
@@ -248,8 +251,12 @@ module.exports = function(portal, callback) {
 			spooky.then(function(){
 				this.capture('healthCheckScrapeData.png');
 			});
+			spooky.then(function(){
+				this.scrollToBottom();
+			});
 			spooky.then([{
-					portal:portal
+					portal:portal,
+					response:response
 				},
         function(){
         	/** define functions to run in page **/
@@ -333,9 +340,10 @@ module.exports = function(portal, callback) {
 						if (portal.config.initialLoadSelector !== undefined && portal.config.initialLoadSelector !== '') {
 							initialLoadSelector = portal.config.initialLoadSelector;
 						}
+						this.emit('console', 'initialLoadSelector: '+initialLoadSelector);
 						this.waitForSelector(initialLoadSelector,
 							function(){ // success function
-								this.emit('currentPage',JSON.stringify(true));
+								//this.emit('currentPage',JSON.stringify(true));
 								// scrape the page data
 								this.emit('health', this.evaluate(checkHealth,{portal:portal}));
 								//this.emit('processed', this.evaluate(scrapeMerchantData,{portal:portal, response:response}));
@@ -343,11 +351,17 @@ module.exports = function(portal, callback) {
 							function(){ // timeout function
 								this.capture('initialLoadSelector_timeout.png');
 								this.echo('initialLoadSelector element wait timed out');
+								this.emit('health', JSON.stringify(response.health));
 							},
-							10000
+							5000
 						); 
 					}
 			}]);
+			spooky.then(function(){
+				this.emit('console','waiting for any additonal steps');
+				this.wait(500);
+			});
+/*
 			spooky.then([{portal:portal},function(){
 				// global variables in this script are outside the [web] page context and are not updated
 				// the emit functions can access current values of these variables, 
@@ -366,6 +380,7 @@ module.exports = function(portal, callback) {
 					);
 				}
 			}]);
+*/
 	}
 	
 	var logoutFromPortal = function() {
@@ -490,8 +505,6 @@ module.exports = function(portal, callback) {
 			navToAllStores();
 			// scrape the page
 			scrape();
-			// if logged in, click the logout link
-			logoutFromPortal();
 		}
 
 		return spooky.run();
@@ -552,8 +565,13 @@ module.exports = function(portal, callback) {
 		
 		spooky.on('health', function (healthResult) {
 			console.log('health: '+healthResult);
+			console.log('health retry: '+JSON.stringify(retry));
 			response.health = JSON.parse(healthResult);
-
+			console.log('health conditional: '+JSON.stringify([response.health.elementCount, retry]));
+			if (response.health.elementCount === 0 && retry < 5) {
+				scrape();
+				retry++;
+			}
 		});
 
 		spooky.on('currentPage', function (result) {
@@ -610,3 +628,5 @@ module.exports = function(portal, callback) {
 	}
 	var spooky = new Spooky(config, spookyFunction);
 }
+
+module.exports = statusCheck;
