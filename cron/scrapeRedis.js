@@ -580,6 +580,7 @@ var statusCheck = function(portal, callback) {
 			//console.log('run complete # merchants:'+response.merchants.length);
 			//if (portal.scrapeType !== 1 && response.health !== undefined) {
 				console.log('run complete # merchants:'+response.merchants.length);
+				spooky.destroy();
 				callback(null, JSON.stringify(response.merchants));
 			//} else if (portal.scrapeType === 1 ) {
 			//	callback(null, accessToken);
