@@ -52,6 +52,31 @@ var retrieveCredentialsByPortalID = function(portalID, type, callback) {
 	}
 }
 
+var retrievePortalStatusKeys = function(type, callback) {
+	if (client === undefined) {
+		console.log('call to setTimeout for retrieveAllPortalStatus');
+		setTimeout(retrieveAllPortalStatus, 500, type, callback);
+		connectToRedis();
+	} else {
+		if (type === undefined) {
+			type = 'online';
+		}
+		console.log('retrieveAllPortalStatus finding keys for type '+type);
+		client.keys('status:*:'+type, callback);
+	}
+}
+
+var retrievePortalStatus = function(statusKey, callback) {
+	if (client === undefined) {
+		console.log('call to setTimeout for retrievePortalStatusByPortalID');
+		setTimeout(retrievePortalStatusByPortalID, 500, statusKey, callback);
+		connectToRedis();
+	} else {
+		console.log('retrievePortalStatusByPortalID finding staus for '+statusKey);
+		client.hgetall(statusKey, callback);
+	}
+}
+
 var retrievePortalConfigByPortalID = function(portalID, type, callback) {
 	if (client === undefined) {
 		console.log('call to setTimeout for retrievePortalConfigByPortalID');
@@ -146,6 +171,8 @@ module.exports = {
 	retrievePortalLink: retrievePortalLinkDataByPortalID,
 	retrievePortalName: retrievePortalNameDataByPortalID,
 	retrievePortalReward: retrievePortalRewardDataByPortalID,
+	retrievePortalStatusKeys: retrievePortalStatusKeys,
+	retrievePortalStatus: retrievePortalStatus,
 	retrievePortalKeys: retrievePortalKeys,
 	retrieveStoreKeys: retrieveStoreKeys,
 	updateStatus: updateStatus,

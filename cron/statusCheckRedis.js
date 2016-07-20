@@ -59,6 +59,7 @@ var accessToken = null;
 var pageCount = 0;
 var currentPage = 0;
 var retry = 0;
+var retryLimit = 5;
 
 var config = 
 	{ child: { 
@@ -103,11 +104,13 @@ var response = {
 };
 
 var statusCheck = function(portal, callback) {
-/*
-	if (portal.loadJquery !== undefined && portal.loadJquery) {
+	// any remoteScripts pushed to CasperJS config remain there until removed
+	// avoid loading the same script multiple times
+	config.casper.remoteScripts = [];
+	if (portal.config.loadJquery !== undefined && portal.config.loadJquery === 'true') {
 		config.casper.remoteScripts.push('https://code.jquery.com/jquery-2.1.3.min.js');
 	}
-*/
+
 	var retrieveToken = function() {
 		if (portal.tokenVariable !== undefined) {
 			spooky.then(
@@ -233,12 +236,18 @@ var statusCheck = function(portal, callback) {
 				this.emit('console','clicking all stores link');
 				this.waitForSelector(portal.config.allStoreSelector,
 					function(){
+						this.emit('console','clicking allStoreSelector :'+portal.config.allStoreSelector)
 						this.click(portal.config.allStoreSelector);
 					},
 					function(){
 						this.emit('console','timeout waiting for all stores link');
 					},
 					parseInt(portal.config.waitTimeout));				
+			}]);
+		} else if (portal.config.storePath !== undefined && portal.config.storePath !== '') {
+			spooky.then([{portal:portal},function(){
+				this.emit('console','opening path '+portal.config.storePath);
+				this.open(portal.config.baseUrl+portal.config.storePath);
 			}]);
 		}
 		// 
@@ -248,9 +257,18 @@ var statusCheck = function(portal, callback) {
 
 	var scrape = function(){
 		console.log('scrape');
+		  /*
 			spooky.then(function(){
 				this.capture('healthCheckScrapeData.png');
 			});
+			*/
+			if (portal.config.continueSelector !== undefined && portal.config.continueSelector !== '') {
+				spooky.then([{portal:portal},
+					function(){
+						this.click(portal.config.continueSelector);
+					}
+				]);
+			}
 			spooky.then(function(){
 				this.scrollToBottom();
 			});
@@ -349,11 +367,13 @@ var statusCheck = function(portal, callback) {
 								//this.emit('processed', this.evaluate(scrapeMerchantData,{portal:portal, response:response}));
 							},
 							function(){ // timeout function
+								/*
 								this.capture('initialLoadSelector_timeout.png');
+								*/
 								this.echo('initialLoadSelector element wait timed out');
 								this.emit('health', JSON.stringify(response.health));
 							},
-							5000
+							parseInt(portal.config.waitTimeout)
 						); 
 					}
 			}]);
@@ -401,7 +421,7 @@ var statusCheck = function(portal, callback) {
 		// nav to base url page
 		spooky.start(portal.config.baseUrl, 
 			function() {
-				this.capture('baseUrl.png');
+				//this.capture('baseUrl.png');
 				/*
 				phantom.cookiesEnabled = true;
 				if (portal.cookies !== undefined) {
@@ -448,13 +468,13 @@ var statusCheck = function(portal, callback) {
 					function(){
 						this.waitForSelector(portal.auth.formSelector,
 							function(){
-								this.capture(portal['key']+'_'+'authPage.png');
+								//this.capture(portal['key']+'_'+'authPage.png');
 								this.emit('console','filling login page');
 								this.emit('console','credentials:'+JSON.stringify(portal.auth.credentials));
 								this.fillSelectors(portal.auth.formSelector, 
 										portal.auth.credentials, 
 										portal.auth.submitForm );
-								this.capture(portal['key']+'_'+'filledAuth.png');
+								//this.capture(portal['key']+'_'+'filledAuth.png');
 							},
 							function(){
 								this.emit('console','login form did not load');
@@ -568,7 +588,7 @@ var statusCheck = function(portal, callback) {
 			console.log('health retry: '+JSON.stringify(retry));
 			response.health = JSON.parse(healthResult);
 			console.log('health conditional: '+JSON.stringify([response.health.elementCount, retry]));
-			if (response.health.elementCount === 0 && retry < 5) {
+			if (response.health.elementCount === 0 && retry < retryLimit) {
 				scrape();
 				retry++;
 			}
