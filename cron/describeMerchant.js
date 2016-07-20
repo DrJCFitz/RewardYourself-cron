@@ -2,7 +2,7 @@ var portal_keys;
 var currentTimeStamp = new Date();
 var timeStampForDay = new Date(currentTimeStamp.getFullYear(),
     currentTimeStamp.getMonth(),
-    currentTimeStamp.getDay())/1000;
+    currentTimeStamp.getDate())/1000;
 var uniqueIds = [];
 
 var merchant = function( merch, portal ) {
