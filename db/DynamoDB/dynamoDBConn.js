@@ -3,6 +3,34 @@ var dynamo = new AWS.DynamoDB({region: process.env.DYNAMODB_REGION, endpoint: pr
 var docClient = new AWS.DynamoDB.DocumentClient({params:{}, service: dynamo});
 console.log('DynamoDB region: ' + process.env.DYNAMODB_REGION + ', endpoint: ' + process.env.DYNAMODB_ENDPOINT);
 
+var objectToDynamo = function(inputObject) {
+	var dynOut = {};
+	Object.keys(inputObject).forEach(function(key){
+		if ( (typeof(inputObject[key]) !== 'string') ||
+				(typeof(inputObject[key]) === 'string' && inputObject[key]) ) {
+			dynOut[key] = describeProperty(inputObject[key]);
+		}
+	});
+	return dynOut;
+}
+var describeProperty = function(inputProperty) {
+	switch (typeof inputProperty) {
+	case 'number':
+		return {"N":inputProperty.toString()};
+		break;
+	case 'string':
+		return {"S":inputProperty};
+		break;
+	case 'object':
+		if (inputProperty === null) {
+			return {"NULL":true};
+		} else {
+			return {"M":objectToDynamo(inputProperty)};
+		}
+		break;
+	}
+}
+
 // must pass keyObj in form of {hash: val, range: val}
 var batchGet = function(tableName, keyObj, callback) {
 	table = tableName || 'Merchants';
@@ -46,14 +74,14 @@ var batchWrite = function(items, table, callback) {
 	        // targeted at the Image table
 	        item = items.pop();
 	    	//console.log('batchWrite length of items after pop: '+items.length);
-	        params['RequestItems'][table].push({ PutRequest: {Item: item }});
+	        params['RequestItems'][table].push({ PutRequest: {Item: objectToDynamo(item) }});
 	    }
 	    // Kick off this batch of requests
 	    console.log("Calling BatchWriteItem with a new batch of "
 	            + params['RequestItems'][table].length + " items");
 	    console.log("batchCount = "+batchCount+" set to execute in "+(10*batchCount)+" seconds");
-	    //console.log("form of params sent to batchWrite: "+JSON.stringify(params));
-	    docClient.batchWrite(params, doBatchWriteItem);
+	    console.log("form of params sent to batchWrite: "+JSON.stringify(params));
+	    dynamo.batchWriteItem(params, doBatchWriteItem);
 
 	    // Initialize a new blank params variable
 	    params['RequestItems'][table] = [];
@@ -81,7 +109,7 @@ var batchWrite = function(items, table, callback) {
               + params['RequestItems'][table].length + "UnprocessedItems in "+(10*attempt)+" seconds");
           console.log("batchCount increased to "+batchCount);
           setTimeout(function(){
-          		docClient.batchWrite(params, doBatchWriteItem);
+          		dynamo.batchWriteItem(params, doBatchWriteItem);
           	},10000*attempt);
 	        } else {
 	            console.log("BatchWriteItem processed all items in the batch, batchCount = "+batchCount);
