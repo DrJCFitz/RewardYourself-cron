@@ -61,7 +61,7 @@ var parseReward = function( rawReward, portal ){
             rate = ( null == matchReward[portal.pageData.reward.rateIndex] ) ? null :  matchReward[portal.pageData.reward.rateIndex];
         } else { 
             unit = matchReward[portal.pageData.reward.dollarIndex];
-            rate = matchReward[portal.pageData.reward.dollarIndex];
+            rate = (matchReward[portal.pageData.reward.unitIndex] === undefined) ? null : matchReward[portal.pageData.reward.unitIndex];
         }
         if (rate) {
             rate = rate.replace(/\s/,'');
