@@ -4,6 +4,7 @@ var dynamo = require('../db/DynamoDB/dynamoDBConn.js');
 var encryptDecrypt = require('./encryptDecrypt');
 var describeMerchant = require('./describeMerchant.js');
 var scrape = require('./scrapeRedis.js');
+var populateStoreCounts = require('./populateStoreCountsRedis.js');
 
 /**
  * getAllPortalStatus()
@@ -63,32 +64,15 @@ var writeDynamoStep = function(describeResult, writeDynamoCallback){
 
 var writeRedisStep = function(dataToWrite, callback){
     console.log('writing describeMerchant results to redis');
-    callback(null, {});
-    /*
-    if ((dataToWrite.portalKey !== undefined && dataToWrite.portalKey !== '')
-        && dataToWrite.portalType !== undefined && dataToWrite.portalType !=='') {
-        redis.updateStatus(dataToWrite, function(err, result){
-            if (err) { console.log(err); callback(err); }
-            console.log('refreshStatus result: '+JSON.stringify(result));
-            callback(null, result);
-        });        
-    } else {
-        console.log('writeRedisStep: portalKey or portalType in dataToWrite not correctly set');
-        callback(null, {});
+    if (typeof dataToWrite !== 'object' || dataToWrite.length === 0) {
+        console.log('no described merchants were passed to writeRedisStep');
+        callback(null, dataToWrite);
     }
-    */
-    /*
-    // last step per portal: bulk-write results to mongoDB merchants table
-    // mongoDB store will only be used for current data
-    mongodb.updateMerchants(portal, describeResult, function(err, data){
-        if (err) {
-            console.log(err);
-        }
-        console.log('mongo wrote items');
-        //console.log(data);
-        describeCallback(null, describeResult);
+
+    populateStoreCounts(dataToWrite, function(err,dataOut) {
+        console.log(JSON.stringify(dataOut));
+        callback(null, dataToWrite);
     });
-    */
 }
 
 var actOnPortals = function(portalData, callback){
@@ -217,8 +201,8 @@ var actOnPortals = function(portalData, callback){
                         });
                     }
                   },
+                  writeRedisStep,
                   writeDynamoStep
-                  //writeRedisStep,
                 ],
                 function(err){
                     console.log('finished series waterfall');
