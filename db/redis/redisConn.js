@@ -163,9 +163,62 @@ var updateStatus = function(status, callback) {
 	}
 }
 
+var cacheStoreName = function(storeKey, storeName, callback) {
+	if (client === undefined) {
+		setTimeout(cacheStoreName,500,storeKey,storeName,callback);
+	} else {
+		client.hset('store:names', storeKey, storeName, callback);
+	}
+}
+
+var getCachedStoreNames = function(callback) {
+	if (client === undefined) {
+		setTimeout(cacheStoreName,500,callback);
+	} else {
+		client.hgetall('store:names', callback);
+	}
+}
+
+var incrementStoreCountByOne = function(storeKey, callback) {
+	if (client === undefined) {
+		setTimeout(cacheStoreCount,500,storeKey,callback);
+	} else {
+		client.hincrby('store:counts', storeKey, 1, callback);
+	}
+}
+
+var getStoreCounts = function(callback) {
+	if (client === undefined) {
+		setTimeout(cacheStoreCount,500,callback);
+	} else {
+		client.hgetall('store:counts', callback);
+	}
+}
+
+var keyExists = function(key, callback) {
+	if (client === undefined) {
+		setTimeout(keyExists,500,key,callback);
+	} else {
+		client.exists(key, callback);
+	}
+}
+
+var wipeKey = function(key, callback) {
+	if (client === undefined) {
+		setTimeout(wipeKey,500,key,callback);
+	} else {
+		client.del(key, callback);
+	}
+}
+
 connectToRedis();
 
 module.exports = {
+	cacheStoreName: cacheStoreName,
+	getCachedStoreNames: getCachedStoreNames,
+	getStoreCounts: getStoreCounts,
+	keyExists: keyExists,
+	incrementStoreCountByOne: incrementStoreCountByOne,
 	retrieveCredentials: retrieveCredentialsByPortalID,
 	retrievePortalConfig: retrievePortalConfigByPortalID,
 	retrievePortalLink: retrievePortalLinkDataByPortalID,
@@ -176,4 +229,5 @@ module.exports = {
 	retrievePortalKeys: retrievePortalKeys,
 	retrieveStoreKeys: retrieveStoreKeys,
 	updateStatus: updateStatus,
+	wipeKey: wipeKey
 };
