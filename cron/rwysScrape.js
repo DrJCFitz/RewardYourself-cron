@@ -4,7 +4,21 @@ var dynamo = require('../db/DynamoDB/dynamoDBConn.js');
 var encryptDecrypt = require('./encryptDecrypt');
 var describeMerchant = require('./describeMerchant.js');
 var scrape = require('./scrapeRedis.js');
-var populateStoreCounts = require('./populateStoreCountsRedis.js');
+
+var clearKeys = function(callback) {
+    ['store:counts', 'store:names'].forEach(function(key, index, origArray){
+        redis.keyExists(key, function(err,response){
+            if (parseInt(response) > 0) {
+                redis.wipeKey(key, function(wipeErr, wipeResp){
+                    console.log('wipeKey response: '+key+' '+JSON.stringify(wipeResp));
+                });
+            }
+        });
+        if (index === (origArray.length-1)) {
+            callback(null,{});
+        }
+    });
+}
 
 /**
  * getAllPortalStatus()
@@ -14,7 +28,7 @@ var populateStoreCounts = require('./populateStoreCountsRedis.js');
  * 
  * @param callback -- callback for passing a return value to the next function in sequence
  */
-var getAllPortalStatus = function(callback){
+var getAllPortalStatus = function(data, callback){
     // get the online portal information
     redis.retrievePortalStatusKeys('online',function(err, portals){
         if (err) { 
@@ -91,27 +105,30 @@ var actOnPortals = function(portalData, callback){
                 [function(callback){
                       redis.retrieveStoreKeys(function(err, storeKeys){
                           if (err) console.log(err);
-                          console.log('portal_keys length: '+storeKeys.length);
+                          console.log('portal_keys length: '+Object.keys(storeKeys).length);
                           storeKeyNames = storeKeys; 
                           callback(null,storeKeys);
                     });
                  },
                  function(storeKeys,callback){
-                    console.log('storeKeys result: '+storeKeys.length);
+                    console.log('storeKeys result: '+Object.keys(storeKeys).length);
                     console.log('portalConfig step status: '+JSON.stringify(portalData));
                     redis.retrievePortalStatus(portal,function(err, status){
                         if (err) callback(err);
                         portalData['status'] = status;
                         portalData['status']['continue'] = true;
-                        for (key in Object.keys(portalData['status'])) {
+                        for (var key in portalData['status']) {
                             if (portalData['status'][key] === 'false' 
                                 || portalData['status'][key] === 0) {
                                 portalData['status']['continue'] = false;
                                 console.log('portalData indicates insufficient status to continue: '+JSON.stringify(portalData));
-                                eachCallback(null, {});
                             }                            
                         }
-                        callback(null,portalData);
+                        if (portalData['status']['continue'] === true) {
+                            callback(null,portalData);
+                        } else {
+                            eachCallback(null, {});
+                        }
                     });
                  },
                  function(portalStatus, callback){
@@ -201,7 +218,25 @@ var actOnPortals = function(portalData, callback){
                         });
                     }
                   },
-                  writeRedisStep,
+                  function(dataToWrite, callback) {
+                    var dataLength = dataToWrite.length;
+                    var incrementCount = 0;
+                    var nameCount = 0;
+                    dataToWrite.forEach(function(element){
+                        redis.cacheStoreName(element.storeKey, element.name, function(err,cacheResp){
+                            nameCount++;
+                            if (incrementCount === dataLength && nameCount === dataLength) {
+                                callback(null, dataToWrite);
+                            }
+                        })
+                        redis.incrementStoreCountByOne(element.storeKey, function(err,cacheResp){
+                            incrementCount++;
+                            if (incrementCount === dataLength && nameCount === dataLength) {
+                                callback(null, dataToWrite);
+                            }
+                        });
+                    });
+                  },
                   writeDynamoStep
                 ],
                 function(err){
@@ -219,6 +254,7 @@ var actOnPortals = function(portalData, callback){
 
 async.waterfall(
     [
+      clearKeys,
       getAllPortalStatus,
       actOnPortals
     ],
