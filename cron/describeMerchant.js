@@ -21,7 +21,7 @@ var merchant = function( merch, portal ) {
     }
     this.link += merch.link;
     this.reward = parseReward( merch.reward, portal );
-    this.topStoreRating = (this.reward.limit === null && this.reward.rate !== null) ? Math.round(100*portal.config.equivalentPercentage*this.reward.value)/100 : 0.00;
+    this.topStoreRating = (this.reward !== null && this.reward.limit === null && this.reward.rate !== null) ? Math.round(100*portal.config.equivalentPercentage*this.reward.value)/100 : 0.00;
     this.storeType = portal.config.type;
     this.dateCreated = timeStampForDay;
     // use the id for the timestamp in seconds
@@ -95,7 +95,8 @@ var process = function( portal, merchants, portalKeys, callback) {
     dedupedMerch = [];
     merchants.forEach(function(merchElement, index, array){
         generatedMerchant = new merchant(merchElement, portal);
-        if (uniqueIds.indexOf(generatedMerchant.portalStoreKey) === -1) {
+        if (uniqueIds.indexOf(generatedMerchant.portalStoreKey) === -1 &&
+            generatedMerchant.reward !== null) {
             uniqueIds.push(generatedMerchant.portalStoreKey);
             dedupedMerch.push(generatedMerchant);
         } else {
