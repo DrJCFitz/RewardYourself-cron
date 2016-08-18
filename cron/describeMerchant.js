@@ -92,11 +92,12 @@ var process = function( portal, merchants, portalKeys, callback) {
     portal_keys = portalKeys;
     console.log('describeMerchant input ' + merchants.length);
     //console.log('global portal_keys undefined?: '+JSON.stringify(undefined === portalKeys));
-    dedupedMerch = [];
+    var dedupedMerch = [];
+    var uniqueIds = [];
     merchants.forEach(function(merchElement, index, array){
         generatedMerchant = new merchant(merchElement, portal);
-        if (uniqueIds.indexOf(generatedMerchant.portalStoreKey) === -1 &&
-            generatedMerchant.reward !== null) {
+        if (uniqueIds.indexOf(generatedMerchant.portalStoreKey) === -1 
+            && generatedMerchant.reward !== null) {
             uniqueIds.push(generatedMerchant.portalStoreKey);
             dedupedMerch.push(generatedMerchant);
         } else {
