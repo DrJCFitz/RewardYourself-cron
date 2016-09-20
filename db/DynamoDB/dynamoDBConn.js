@@ -143,8 +143,9 @@ var batchDelete = function(items, table, callback) {
 	        // Take a URL from the list and add a new PutRequest to the list of requests
 	        // targeted at the Image table
 	        item = items.pop();
+	        var deleteItem = {portalStoreKey: item.portalStoreKey, dateCreated: item.dateCreated };
 	    	//console.log('batchWrite length of items after pop: '+items.length);
-	        params['RequestItems'][table].push({ DeleteRequest: {Item: objectToDynamo(item) }});
+	        params['RequestItems'][table].push({ DeleteRequest: { Key: objectToDynamo(deleteItem) }});
 	    }
 	    // Kick off this batch of requests
 	    console.log("Calling BatchWriteItem with a new batch of "
