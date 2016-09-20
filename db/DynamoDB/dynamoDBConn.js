@@ -211,6 +211,27 @@ var get = function(tableName, keyObj, callback) {
 	docClient.get(params, queryCallback);
 }
 
+var queryStoreRewards = function(storeKey, callback) {
+	var params = {};
+	params.TableName = 'Merchants';
+	params.Select = 'ALL_PROJECTED_ATTRIBUTES';
+	params.IndexName = 'StoreIndex';
+	params.KeyConditionExpression = 'storeKey = :value';
+	params.ExpressionAttributeValues = {':value': storeKey };
+	params.FilterExpression = "attribute_exists(reward)";
+
+	var queryCallback = function(err, data){
+		if (err) {
+			//console.log(err);
+			callback(err, data);
+		} else {
+			//console.log('query response: '+JSON.stringify(data));
+			callback(null, data);
+		}
+	}
+	docClient.query(params, queryCallback);	
+}
+
 var queryByHash = function(tableName, hashKey, hashValue, callback) {
 	var params = {};
 	params.TableName = tableName;
@@ -280,6 +301,7 @@ module.exports = {
 	batchGet: batchGet,
 	batchDelete: batchDelete,
 	queryByHash: queryByHash,
+	queryStoreRewards: queryStoreRewards,
 	queryByHashDateRange: queryByHashDateRange,
 	put: put,
 	batchWrite: batchWrite
