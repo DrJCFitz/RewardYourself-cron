@@ -29,22 +29,26 @@ var checkDuplicateRewards = function(storeList, callback){
 	              	});
 	              },
 	              function(storeRewards, callback) {
-	              	console.log('dataset for '+storeRewards[0].storeKey+' contains '+storeRewards.length+' points before reduction');
-									var currValue = {};
-									var removeData = storeRewards.filter(function(element, index, array){
-										var val = element.reward.value*parseFloat(element.reward.equivalentPercentage);
-										if (currValue[element.portalStoreKey] === undefined 
-											|| currValue[element.portalStoreKey] !== val
-											|| index >= (array.length - Object.keys(currValue).length)) {
-											//console.log('currValue = '+currValue[element.portalStoreKey]+' and val = '+val+' which evaluates to '+JSON.stringify(currValue[element.portalStoreKey] !== val));
-											currValue[element.portalStoreKey] = val;
-											return false;
-										} else {
-											return true;
-										}
-									});
-	              	console.log('dataset contains '+removeData.length+' less points after reduction');
-									callback(null, removeData);
+	              	if (storeRewards.length > 0) {
+		              	//console.log('dataset for '+storeRewards[0].storeKey+' contains '+storeRewards.length+' points before reduction');
+										var currValue = {};
+										var removeData = storeRewards.filter(function(element, index, array){
+											var val = element.reward.value*parseFloat(element.reward.equivalentPercentage);
+											if (currValue[element.portalStoreKey] === undefined 
+												|| currValue[element.portalStoreKey] !== val
+												|| index >= (array.length - Object.keys(currValue).length)) {
+												//console.log('currValue = '+currValue[element.portalStoreKey]+' and val = '+val+' which evaluates to '+JSON.stringify(currValue[element.portalStoreKey] !== val));
+												currValue[element.portalStoreKey] = val;
+												return false;
+											} else {
+												return true;
+											}
+										});
+		              	console.log('dataset contains '+removeData.length+' less points after reduction');
+										callback(null, removeData);	              		
+	              	} else {
+	              		callback(true);
+	              	}
 	              },
 	              function(dataToRemove, callback) {
 	              	if (dataToRemove.length > 0) {
