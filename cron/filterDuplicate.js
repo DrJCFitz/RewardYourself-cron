@@ -47,9 +47,18 @@ var checkDuplicateRewards = function(storeList, callback){
 									callback(null, removeData);
 	              },
 	              function(dataToRemove, callback) {
-	              	dynamo.batchDelete(dataToRemove, 'Merchants', function(err,data){
-	              		callback(null, data);
-	              	});
+	              	if (dataToRemove.length > 0) {
+	              		dynamo.batchDelete(dataToRemove, 'Merchants', function(err,data){
+	              			if (err) {
+	              				console.log(err);
+	              				callback(err);
+	              			} else {
+	              				callback(null, data);
+	              			}
+	              		});
+	              	} else {
+	              		callback(null, {});
+	              	}
 	              }
               ],
               function(err){
