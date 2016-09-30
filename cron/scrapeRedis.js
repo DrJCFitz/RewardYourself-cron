@@ -513,7 +513,8 @@ var statusCheck = function(portal, callback) {
 		});
 
 		spooky.on("load.failed", function(object) {
-	    callback(true, "ERROR: Load failed");
+			console.log('ERROR: Load failed');
+	    //callback(true, "ERROR: Load failed");
 		});
 		
 		spooky.on("resource.error", function(resourceError) {
