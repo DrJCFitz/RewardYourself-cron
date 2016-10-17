@@ -1,7 +1,7 @@
 var async = require('async');
 var redis = require('../db/redis/redisConn.js');
 var dynamo = require('../db/DynamoDB/dynamoDBConn.js');
-var encryptDecrypt = require('./encryptDecrypt');
+//var encryptDecrypt = require('./encryptDecrypt');
 var describeMerchant = require('./describeMerchant.js');
 var scrape = require('./scrapeRedis.js');
 
@@ -37,7 +37,7 @@ var getAllPortalStatus = function(data, callback){
         console.log(portals.length+' portals in array');
         // returns an array of portal data
         callback(null,portals);
-    })
+    });
 }
 
 /**
@@ -50,8 +50,8 @@ var getAllPortalStatus = function(data, callback){
 var decryptCredentials = function(encryptedCredentials, callback){
     if (encryptedCredentials !== null && encryptedCredentials !== '') {
         var credentialsObj = {
-            username: encryptDecrypt.decrypt(encryptedCredentials.username),
-            password: encryptDecrypt.decrypt(encryptedCredentials.password)
+            username: encryptedCredentials.username, //encryptDecrypt.decrypt(encryptedCredentials.username),
+            password: encryptedCredentials.password //encryptDecrypt.decrypt(encryptedCredentials.password)
         };
         callback(null, credentialsObj);
     } else {

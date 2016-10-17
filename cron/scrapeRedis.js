@@ -55,6 +55,7 @@ try {
   var Spooky = require('../lib/spooky');
 }
 
+var fs = require('fs');
 
 var config = 
 	{ child: { 
@@ -251,21 +252,25 @@ var statusCheck = function(portal, callback) {
 
 	var scrape = function(){
 		console.log('scrape');
-		  /*
+
+			if (portal.config.continueSelector !== undefined && portal.config.continueSelector !== '') {
+				spooky.then([{portal:portal},
+					function(){
+						if (this.visible(portal.config.continueSelector)) {
+							this.click(portal.config.continueSelector);
+						}
+					}
+				]);
+			}
+			/*
 			spooky.then(function(){
 				this.capture('healthCheckScrapeData.png');
 			});
 			*/
-			if (portal.config.continueSelector !== undefined && portal.config.continueSelector !== '') {
-				spooky.then([{portal:portal},
-					function(){
-						this.click(portal.config.continueSelector);
-					}
-				]);
-			}
-			spooky.then(function(){
+			spooky.then([{portal:portal},function(){
+				this.wait(2*portal.config.waitTimeout);
 				this.scrollToBottom();
-			});
+			}]);
 			spooky.then([{portal:portal},
         function(){
       	this.emit('console','scrapeMerchantData');
@@ -349,6 +354,13 @@ var statusCheck = function(portal, callback) {
 				}			
 			}]);
 		}
+	}
+
+	var takeAPicture = function() {
+		spooky.then(function(){
+			fs.write('zeroMerchants.html', this.getPageContent(), 'w');
+			this.capture('zeroMerchants.png');
+		});
 	}
 
 	var navToBasePage = function() {
@@ -571,6 +583,7 @@ var statusCheck = function(portal, callback) {
 			console.log('merchants after `processed` call: '+response.merchants.length);
 			console.log('processed conditional: '+JSON.stringify([response.merchants.length, retry]));
 			if (response.merchants.length === 0 && retry < retryLimit) {
+				takeAPicture();
 				scrape();
 				retry++;
 			}
