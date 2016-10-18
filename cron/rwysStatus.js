@@ -1,6 +1,6 @@
 var async = require('async');
 var redis = require('../db/redis/redisConn.js');
-var encryptDecrypt = require('./encryptDecrypt');
+//var encryptDecrypt = require('./encryptDecrypt');
 var statusCheck = require('./statusCheckRedis.js');
 
 /**
@@ -33,8 +33,8 @@ var getPortalKeys = function(callback){
 var decryptCredentials = function(encryptedCredentials, callback){
     if (encryptedCredentials !== null && encryptedCredentials !== '') {
         var credentialsObj = {
-            username: encryptDecrypt.decrypt(encryptedCredentials.username),
-            password: encryptDecrypt.decrypt(encryptedCredentials.password)
+            username: encryptedCredentials.username, //encryptDecrypt.decrypt(encryptedCredentials.username),
+            password: encryptedCredentials.password //encryptDecrypt.decrypt(encryptedCredentials.password)
         };
         callback(null, credentialsObj);
     } else {
