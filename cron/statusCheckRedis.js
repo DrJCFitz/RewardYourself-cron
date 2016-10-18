@@ -265,7 +265,9 @@ var statusCheck = function(portal, callback) {
 			if (portal.config.continueSelector !== undefined && portal.config.continueSelector !== '') {
 				spooky.then([{portal:portal},
 					function(){
-						this.click(portal.config.continueSelector);
+						if (this.visible(portal.config.continueSelector)) {
+							this.click(portal.config.continueSelector);
+						}
 					}
 				]);
 			}
