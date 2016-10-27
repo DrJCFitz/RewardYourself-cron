@@ -357,10 +357,10 @@ var statusCheck = function(portal, callback) {
 	}
 
 	var takeAPicture = function() {
-		spooky.then(function(){
+		spooky.then([{fs:fs},function(){
 			fs.write('zeroMerchants.html', this.getPageContent(), 'w');
 			this.capture('zeroMerchants.png');
-		});
+		}]);
 	}
 
 	var navToBasePage = function() {

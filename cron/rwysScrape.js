@@ -32,6 +32,8 @@ var getAllPortalStatus = function(data, callback){
     // get the online portal information
     redis.retrievePortalStatusKeys('online',function(err, portals){
         if (err) { 
+            // for some reason DynamoDB bombs on the first run
+            portals.push(portals[0]);
             callback(err,portals); 
         }
         console.log(portals.length+' portals in array');
