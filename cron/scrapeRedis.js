@@ -229,6 +229,11 @@ var statusCheck = function(portal, callback) {
 				this.emit('console','clicking all stores link');
 				this.waitForSelector(portal.config.allStoreSelector,
 					function(){
+						if (portal.config.continueSelector !== undefined && portal.config.continueSelector !== '') {
+							if (this.visible(portal.config.continueSelector)) {
+								this.click(portal.config.continueSelector);
+							}
+						}
 						this.emit('console','clicking allStoreSelector :'+portal.config.allStoreSelector)
 						this.click(portal.config.allStoreSelector);
 					},
